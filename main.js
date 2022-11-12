@@ -1,19 +1,44 @@
 var selected_word;
-
-d3.csv("data/reelchart_table_nonzero.csv", function (data) {
+let word_count = 0;
+function sortIds (data, youtube_data) {
   const ids = [...new Set(data.map((d) => d.id))];
-  const words = [
-    ...new Set(data.sort((a, b) => b.count - a.count).map((d) => d.word)),
-  ];
+  ids.sort((a, b) => {
+    return (
+      youtube_data.filter((d) => d.id == b)[0].views -
+      youtube_data.filter((d) => d.id == a)[0].views
+    );
+  });
+  return ids;
+}
 
-  var selected_word = words[0];
+Promise.all([
+  d3.csv("data_1/reelchart_table_referenced.csv"), 
+  d3.csv("data_1/youtube_report.csv"),
+  d3.csv("data_2/reelchart_table_referenced.csv"),
+  d3.csv("data_2/youtube_report.csv"), 
+]).then(function (files) {
+
+  const data_1 = files[0];
+  const youtube_data_1 = files[1];
+  const ids_1 = sortIds(data_1, youtube_data_1);
+
+  const data_2 = files[2];
+  const youtube_data_2 = files[3];
+  const ids_2 = sortIds(data_2, youtube_data_2);
+
+  var selected_word = null;
   var width = document.body.clientWidth;
   var height = document.body.clientHeight; 
 
-  var max_count = d3.max(
-    data.filter((d) => d.word == selected_word),
-    (d) => +d.count
-  );
+  let data = [...data_1, ...data_2];
+
+  const words = [
+      ...new Set(
+        data
+          .sort((a, b) => data.filter((d) => d.word == b.word).length - data.filter((d) => d.word == a.word).length)
+          .map((d) => d.word)
+      ),
+  ];
 
   wrapper = d3.select("body").append("div").attr("class", "wrapper");
 
@@ -38,29 +63,22 @@ d3.csv("data/reelchart_table_nonzero.csv", function (data) {
   submitButton.on("click", function () {
     d3.event.preventDefault();
     selected_word = d3.select("#searchInput").property("value");
-    svg.remove();
-    max_count = d3.max(
-      data.filter((d) => d.word == selected_word),
-      (d) => +d.count
-    );
-    draw_reelchart(data, selected_word, ids, width, height, max_count);
-    draw_reel_line(data, selected_word, ids, width, height, max_count);
+    d3.selectAll("svg").remove();
+    word_count = data.filter((d) => d.word == selected_word).length;
+    draw_reelchart(data_1, selected_word, ids_1, width, height, word_count, 'BBC');
+    draw_reelchart(data_2, selected_word, ids_2, width, height, word_count, 'FOX News');
   });
 
   form.on("submit", function (event) {
     d3.event.preventDefault();
     selected_word = d3.select("#searchInput").property("value");
-    svg.remove();
-    max_count = d3.max(
-      data.filter((d) => d.word == selected_word),
-      (d) => +d.count
-    );
-    draw_reelchart(data, selected_word, ids, width, height, max_count);
-    draw_reel_line(data, selected_word, ids, width, height, max_count);
+    d3.selectAll("svg").remove();
+    word_count = data.filter((d) => d.word == selected_word).length;
+    draw_reelchart(data_1, selected_word, ids_1, width, height, word_count, 'BBC');
+    draw_reelchart(data_2, selected_word, ids_2, width, height, word_count, 'FOX News');
   });
 
   autocomplete(document.getElementById("searchInput"), words);
-
-  draw_reelchart(data, selected_word, ids, width, height, max_count);
-  draw_reel_line(data, selected_word, ids, width, height, max_count);
-});
+  draw_reelchart(data_1, selected_word, ids_1, width, height, word_count, 'BBC');
+  draw_reelchart(data_2, selected_word, ids_2, width, height, word_count, 'FOX News');
+})
