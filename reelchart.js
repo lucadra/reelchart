@@ -137,6 +137,7 @@ function draw_reelchart(data, selected_word, ids, width, height, max_count, char
   let svg_height = svg_bb.height;
   let svg_x = svg_bb.x;
   let svg_y = svg_bb.y;
+  
   svg.attr("viewBox", svg_x + " " + svg_y + " " + svg_width + " " + svg_height);
 }
 
@@ -148,16 +149,20 @@ function appendPopup(data, selected_word, questo, d, i) {
   let popup;
 
   if (d3.select("#popup").empty() == false) {
+    //d3.select("#gray").remove();
     d3.select("#popup").remove();
   }
 
   popup = d3.select("body").append("div").attr("id", "popup");
+
+  d3.select("body").style("overflow", "hidden");
 
   gray = d3
     .select("body")
     .append("div")
     .attr("id", "gray")
     .on("click", function () {
+      d3.select("body").style("overflow", "auto");
       d3.select("#popup").remove();
       d3.select("#gray").remove();
     });
