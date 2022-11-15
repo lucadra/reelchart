@@ -57,7 +57,7 @@ Promise.all([
     .attr("name", "search")
     .attr("placeholder", "Search entity...");
 
-  submitButton = inputbox_wrapper.append("input").attr("type", "submit").attr("value", "Search");
+  submitButton = inputbox_wrapper.append("input").attr("type", "submit").attr("value", "Search").attr("id", "submitButton");
 
   //prevent page from reloading on submit
   submitButton.on("click", function () {
@@ -82,3 +82,9 @@ Promise.all([
   draw_reelchart(data_1, selected_word, ids_1, width, height, word_count, 'BBC');
   draw_reelchart(data_2, selected_word, ids_2, width, height, word_count, 'FOX News');
 })
+
+function updateCharts() {
+  d3.selectAll("svg").remove();
+  draw_reelchart(data_1, selected_word, ids_1, width, height, word_count, 'BBC');
+  draw_reelchart(data_2, selected_word, ids_2, width, height, word_count, 'FOX News');
+}

@@ -1,4 +1,13 @@
-function draw_reelchart(data, selected_word, ids, width, height, max_count, chart_title) {
+function draw_reelchart(
+  data,
+  selected_word,
+  ids,
+  width,
+  height,
+  max_count,
+  chart_title,
+) {
+  // get top 10 most common words
 
   svg = d3
     .select(".wrapper")
@@ -14,7 +23,10 @@ function draw_reelchart(data, selected_word, ids, width, height, max_count, char
     .attr("text-anchor", "middle")
     .style("font-size", "24px")
     .style("font-weight", "bold")
-    .text(chart_title);
+    .text(chart_title)
+    .on("click", function () {
+      displayCommonWords(chart_title, data);
+    });
 
   container = svg.append("g").attr("class", "reelchart");
 
@@ -67,6 +79,8 @@ function draw_reelchart(data, selected_word, ids, width, height, max_count, char
         .attr("xlink:href", function () {
           return "img/" + this.parentNode.id + "_" + i + ".jpg";
         })
+        .style("cursor", "pointer")
+        .style("box-shadow", "0 0 10px 5px rgba(0, 0, 0, 0.5)")
         .raise()
         .select(function () {
           return this.parentNode;
@@ -109,16 +123,13 @@ function draw_reelchart(data, selected_word, ids, width, height, max_count, char
   ///////////////////////////
 
   longest_text = d3.max(labels.nodes(), (d) => d.getBBox().width);
-  
-  //let min_x = longest_text + 10;
-  //let min_y = 0;
-  //let vb_width = width;
-  //let vb_height = height;
-  //
-  //svg.attr(
-  //  "viewBox",
-  //  min_x + " " + min_y + " " + vb_width + min_x + " " + vb_height
-  //);
+  let svg_bb = svg.node().getBBox();
+  let svg_width = svg_bb.width;
+  let svg_height = svg_bb.height;
+  let svg_x = svg_bb.x;
+  let svg_y = svg_bb.y;
+
+  svg.attr("viewBox", svg_x + " " + svg_y + " " + svg_width + " " + svg_height);
 
   ///////////////////////////
   //// SET FRAME OPACITY ////
@@ -131,14 +142,6 @@ function draw_reelchart(data, selected_word, ids, width, height, max_count, char
     ).length;
     return count == 0 ? 0.1 : 1;
   });
-
-  let svg_bb = svg.node().getBBox();
-  let svg_width = svg_bb.width;
-  let svg_height = svg_bb.height;
-  let svg_x = svg_bb.x;
-  let svg_y = svg_bb.y;
-  
-  svg.attr("viewBox", svg_x + " " + svg_y + " " + svg_width + " " + svg_height);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -233,6 +236,71 @@ function appendPopup(data, selected_word, questo, d, i) {
             "&autoplay=1"
           );
         });
+      });
+  });
+}
+
+function displayCommonWords(chart_title, data, selected_word) {
+  let wordbox;
+
+  if (d3.select("#wordbox").empty() == false) {
+    d3.select("#wordbox").remove();
+  }
+
+  wordbox = d3.select("body").append("div").attr("id", "wordbox");
+
+  d3.select("body").style("overflow", "hidden");
+
+  gray = d3
+    .select("body")
+    .append("div")
+    .attr("id", "gray")
+    .on("click", function () {
+      d3.select("body").style("overflow", "auto");
+      d3.select("#wordbox").remove();
+      d3.select("#popup").remove();
+      d3.select("#gray").remove();
+    });
+
+  let wordbox_header = wordbox.append("div").attr("id", "wordbox_header");
+  wordbox_header.append("h2").text(`Most Common Words in ${chart_title}`);
+
+  let unique_words = [...new Set(data.map((d) => d.word))];
+  let word_counts = unique_words.map((word) => {
+    return {
+      word: word,
+      count: data.filter((d) => d.word === word).length,
+    };
+  });
+  word_counts.sort((a, b) => b.count - a.count);
+
+  let table = wordbox.append("table").attr("id", "wordbox_table");
+
+  let table_head = table.append("thead").append("tr");
+  table_head.append("th").text("Word");
+  table_head.append("th").text("Count");
+
+  word_counts.map((d) => {
+    let row = table.append("tr");
+    // Insert Values
+    row.append("td").text(d.word);
+    row.append("td").text(d.count);
+    // Handle pointer events
+    row
+      .style("cursor", "pointer")
+      .on("mouseover", function () {
+        d3.select(this).style("background-color", "lightgray");
+      })
+      .on("mouseout", function () {
+        d3.select(this).style("background-color", "white");
+      })
+      .on("click", function () {
+        d3.select("body").style("overflow", "auto");
+        d3.select("#wordbox").remove();
+        d3.select("#gray").remove();
+        selected_word = d.word;
+        d3.select("#searchInput").property("value", selected_word);
+        d3.select("#submitButton").dispatch("click");
       });
   });
 }
